@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+camera.log
+
+# Dữ liệu bảo mật & Nhạy cảm
+config.yaml
+
+# Dữ liệu video & ảnh giám sát
+recordings/
+test_recordings/
+test_retention_dir/
+
+# Weights mô hình AI (YOLO tự động tải về khi chạy)
+*.pt
+*.onnx
+
+# Môi trường ảo (Virtualenv)
+.venv/
+venv/
+ENV/
+env/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
