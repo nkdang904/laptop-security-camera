@@ -32,9 +32,31 @@ def load_config(config_path="config.yaml"):
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+def cleanup_previous_instances(logger=None):
+    """Tự động tắt các tiến trình camera cũ bị kẹt để giải phóng webcam."""
+    try:
+        import psutil
+        current_pid = os.getpid()
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            try:
+                if proc.info['pid'] != current_pid and proc.info['cmdline']:
+                    if any('main.py' in str(arg) for arg in proc.info['cmdline']):
+                        if logger:
+                            logger.info(f"Đang đóng tiến trình camera cũ (PID {proc.info['pid']}) để giải phóng webcam...")
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=2)
+                        except Exception:
+                            proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    except Exception:
+        pass
+
 def main():
     setup_logging()
     logger = logging.getLogger("MAIN")
+    cleanup_previous_instances(logger)
 
     logger.info("=" * 60)
     logger.info("   KHỞI ĐỘNG HỆ THỐNG CAMERA AN NINH THÔNG MINH LAPTOP")
