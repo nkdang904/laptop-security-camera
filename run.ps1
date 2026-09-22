@@ -20,3 +20,4 @@ Write-Host "==================================================================="
 & $py main.py
 
 Read-Host "Nhan Enter de thoat..."
+
