@@ -166,6 +166,36 @@ def main():
         web_stream.start()
     telegram.start()
 
+    # Gửi thông báo khởi động kèm link Live Stream tới Telegram
+    def notify_startup_async():
+        time.sleep(4)
+        if not telegram.is_configured:
+            return
+        urls = web_stream.get_stream_urls() if web_stream else {}
+        pub_url = urls.get("public_url", "")
+        loc_url = urls.get("local_url", "")
+
+        msg = "🟢 *CAMERA LAPTOP ĐÃ KHỞI ĐỘNG THÀNH CÔNG!*\n\n"
+        msg += "Hệ thống đang hoạt động và giám sát an ninh.\n\n"
+        if pub_url and "trycloudflare" in pub_url:
+            msg += f"🌐 *Link xem trực tiếp từ xa (4G):*\n{pub_url}\n\n"
+        if loc_url:
+            msg += f"🏠 *Link xem trong nhà (Wi-Fi):*\n{loc_url}\n\n"
+        msg += "💡 Gửi `/live` hoặc `/snapshot` bất cứ lúc nào để kiểm tra camera."
+
+        target_url = pub_url if (pub_url and "trycloudflare" in pub_url) else loc_url
+        reply_markup = None
+        if target_url:
+            reply_markup = {
+                "inline_keyboard": [
+                    [{"text": "🔴 Mở Xem Live Stream Ngay", "url": target_url}]
+                ]
+            }
+        telegram.send_message(msg, reply_markup=reply_markup)
+
+    import threading
+    threading.Thread(target=notify_startup_async, name="StartupNotifier", daemon=True).start()
+
     logger.info("Hệ thống đã sẵn sàng và đang giám sát không gian...")
     if not telegram.is_configured:
         logger.warning("👉 Telegram chưa được thiết lập. Hãy chạy 'python setup_telegram.py' để kết nối bot.")
@@ -209,9 +239,23 @@ def main():
 
                     def on_video_ready(video_path):
                         logger.info(f"Đang gửi clip video sự kiện qua Telegram: {video_path}")
+                        reply_markup = None
+                        if web_stream:
+                            urls = web_stream.get_stream_urls()
+                            pub_url = urls.get("public_url", "")
+                            loc_url = urls.get("local_url", "")
+                            view_url = pub_url if (pub_url and "trycloudflare" in pub_url) else loc_url
+                            if view_url:
+                                reply_markup = {
+                                    "inline_keyboard": [
+                                        [{"text": "🔴 Xem Live Trực Tiếp", "url": view_url}]
+                                    ]
+                                }
+
                         telegram.send_video_async(
                             video_path,
-                            caption=f"📹 *Video ghi lại sự kiện phát hiện:* `{det_info}`"
+                            caption=f"📹 *Video ghi lại sự kiện phát hiện:* `{det_info}`",
+                            reply_markup=reply_markup
                         )
 
                     recorder.record_event_async(

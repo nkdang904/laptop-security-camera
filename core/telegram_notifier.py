@@ -87,19 +87,39 @@ class TelegramNotifier:
         if details:
             caption += f"\nℹ️ *Chi tiết:* {details}"
 
-        if snapshot_path and os.path.exists(snapshot_path):
-            self.send_photo(snapshot_path, caption=caption)
-        else:
-            self.send_message(caption)
+        # Đính kèm link xem trực tiếp vào cảnh báo
+        reply_markup = None
+        if self.stream_urls_provider_fn:
+            urls = self.stream_urls_provider_fn()
+            pub_url = urls.get("public_url", "")
+            loc_url = urls.get("local_url", "")
+            view_url = pub_url if (pub_url and "trycloudflare" in pub_url) else loc_url
 
-    def send_video_async(self, video_path: str, caption: str = ""):
+            if pub_url and "trycloudflare" in pub_url:
+                caption += f"\n\n🔴 *Xem trực tiếp (4G):* {pub_url}"
+            elif loc_url:
+                caption += f"\n\n🔴 *Xem trực tiếp (Wi-Fi):* {loc_url}"
+
+            if view_url:
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🔴 Xem Live Trực Tiếp", "url": view_url}]
+                    ]
+                }
+
+        if snapshot_path and os.path.exists(snapshot_path):
+            self.send_photo(snapshot_path, caption=caption, reply_markup=reply_markup)
+        else:
+            self.send_message(caption, reply_markup=reply_markup)
+
+    def send_video_async(self, video_path: str, caption: str = "", reply_markup: Optional[dict] = None):
         """Gửi video sự kiện bất đồng bộ."""
         if not self.is_configured or self.is_muted:
             return
 
         threading.Thread(
             target=self.send_video,
-            args=(video_path, caption),
+            args=(video_path, caption, reply_markup),
             daemon=True
         ).start()
 
@@ -126,7 +146,7 @@ class TelegramNotifier:
             logger.error(f"Lỗi kết nối Telegram sendMessage: {e}")
         return False
 
-    def send_photo(self, photo_path: str, caption: str = "") -> bool:
+    def send_photo(self, photo_path: str, caption: str = "", reply_markup: Optional[dict] = None) -> bool:
         """Gửi ảnh snapshot qua Telegram."""
         if not self.is_configured or not os.path.exists(photo_path):
             return False
@@ -138,6 +158,9 @@ class TelegramNotifier:
                     data = {"chat_id": self.chat_id, "parse_mode": "Markdown"}
                     if caption:
                         data["caption"] = caption
+                    if reply_markup:
+                        import json
+                        data["reply_markup"] = json.dumps(reply_markup)
 
                     resp = client.post(f"{self.base_url}/sendPhoto", data=data, files=files)
                     if resp.status_code == 200:
@@ -148,7 +171,7 @@ class TelegramNotifier:
             logger.error(f"Lỗi kết nối Telegram sendPhoto: {e}")
         return False
 
-    def send_video(self, video_path: str, caption: str = "") -> bool:
+    def send_video(self, video_path: str, caption: str = "", reply_markup: Optional[dict] = None) -> bool:
         """Gửi file video clip qua Telegram."""
         if not self.is_configured or not os.path.exists(video_path):
             return False
@@ -163,6 +186,9 @@ class TelegramNotifier:
                     else:
                         time_str = datetime.now().strftime("%H:%M:%S %d/%m/%Y")
                         data["caption"] = f"📹 *Video ghi nhận sự kiện* (`{time_str}`)"
+                    if reply_markup:
+                        import json
+                        data["reply_markup"] = json.dumps(reply_markup)
 
                     resp = client.post(f"{self.base_url}/sendVideo", data=data, files=files)
                     if resp.status_code == 200:
