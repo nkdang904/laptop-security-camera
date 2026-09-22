@@ -254,6 +254,7 @@ def main():
 
                         telegram.send_video_async(
                             video_path,
+                            caption=f"📹 *Video ghi lại sự kiện phát hiện:* `{det_info}`"
                             caption=f"📹 *Video ghi lại sự kiện phát hiện:* `{det_info}`",
                             reply_markup=reply_markup
                         )

@@ -108,10 +108,13 @@ class TelegramNotifier:
                 }
 
         if snapshot_path and os.path.exists(snapshot_path):
+            self.send_photo(snapshot_path, caption=caption)
             self.send_photo(snapshot_path, caption=caption, reply_markup=reply_markup)
         else:
+            self.send_message(caption)
             self.send_message(caption, reply_markup=reply_markup)
 
+    def send_video_async(self, video_path: str, caption: str = ""):
     def send_video_async(self, video_path: str, caption: str = "", reply_markup: Optional[dict] = None):
         """Gửi video sự kiện bất đồng bộ."""
         if not self.is_configured or self.is_muted:
@@ -119,6 +122,7 @@ class TelegramNotifier:
 
         threading.Thread(
             target=self.send_video,
+            args=(video_path, caption),
             args=(video_path, caption, reply_markup),
             daemon=True
         ).start()
@@ -146,6 +150,7 @@ class TelegramNotifier:
             logger.error(f"Lỗi kết nối Telegram sendMessage: {e}")
         return False
 
+    def send_photo(self, photo_path: str, caption: str = "") -> bool:
     def send_photo(self, photo_path: str, caption: str = "", reply_markup: Optional[dict] = None) -> bool:
         """Gửi ảnh snapshot qua Telegram."""
         if not self.is_configured or not os.path.exists(photo_path):
@@ -171,6 +176,7 @@ class TelegramNotifier:
             logger.error(f"Lỗi kết nối Telegram sendPhoto: {e}")
         return False
 
+    def send_video(self, video_path: str, caption: str = "") -> bool:
     def send_video(self, video_path: str, caption: str = "", reply_markup: Optional[dict] = None) -> bool:
         """Gửi file video clip qua Telegram."""
         if not self.is_configured or not os.path.exists(video_path):
