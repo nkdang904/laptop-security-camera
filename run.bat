@@ -1,18 +1,13 @@
 @echo off
-title Camera An Ninh Laptop
-chcp 65001 > nul
-title Laptop Smart Security Camera
-echo ========================================================
-echo       KHOI DONG LAPTOP SMART SECURITY CAMERA
-echo ========================================================
 cd /d "%~dp0"
+title Laptop Smart Security Camera
 
 echo ===================================================================
-echo             HỆ THỐNG CAMERA AN NINH THÔNG MINH LAPTOP
+echo             HE THONG CAMERA AN NINH THONG MINH LAPTOP
 echo ===================================================================
 echo.
-echo  [*] Đang khởi động Webcam và kết nối Telegram Bot...
-echo  [*] Để dừng camera: Bấm tổ hợp phím Ctrl + C (hoặc tắt cửa sổ này).
+echo  [*] Dang khoi dong Webcam va ket noi Telegram Bot...
+echo  [*] De dung camera: Bam to hop phim Ctrl + C (hoac tat cua so nay).
 echo.
 echo ===================================================================
 echo.
@@ -20,6 +15,5 @@ echo.
 python main.py
 
 echo.
-echo [*] Camera đã dừng.
+echo [*] Camera da dung hoat dong.
 pause
-
