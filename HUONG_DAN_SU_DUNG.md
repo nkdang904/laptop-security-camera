@@ -26,6 +26,7 @@ Bạn có thể mở Telegram trên điện thoại hoặc máy tính bất cứ
 
 | Lệnh | Ý nghĩa & Tác dụng |
 | :--- | :--- |
+| **`/live`** | **Xem trực tiếp thời gian thực:** Nhận ngay link web xem video camera mượt mà (hỗ trợ cả Wi-Fi ở nhà & 4G từ xa qua Cloudflare) + gửi kèm 1 clip video 5s quay trực tiếp tức thì vào Telegram. |
 | **`/snapshot`** | Yêu cầu laptop chụp ngay 1 tấm ảnh từ webcam và gửi về cho bạn lập tức (dùng để kiểm tra nhà cửa khi đang ở ngoài). |
 | **`/status`** | Kiểm tra trạng thái máy: Laptop đang chạy được bao lâu, mức tiêu thụ CPU, dung lượng RAM còn trống, thời gian thực. |
 | **`/mute`** | Tắt chuông cảnh báo tự động (dùng khi bạn đã về nhà, không muốn camera gửi tin nhắn phát hiện người liên tục). |

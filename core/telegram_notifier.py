@@ -24,13 +24,17 @@ class TelegramNotifier:
         chat_id: str = "",
         alert_title: str = "🚨 *CẢNH BÁO AN NINH: PHÁT HIỆN NGƯỜI!*",
         enable_commands: bool = True,
-        snapshot_provider_fn: Optional[Callable[[], Optional[str]]] = None
+        snapshot_provider_fn: Optional[Callable[[], Optional[str]]] = None,
+        live_clip_provider_fn: Optional[Callable[[Callable[[str], None]], None]] = None,
+        stream_urls_provider_fn: Optional[Callable[[], dict]] = None
     ):
         self.bot_token = bot_token.strip()
         self.chat_id = str(chat_id).strip()
         self.alert_title = alert_title
         self.enable_commands = enable_commands
         self.snapshot_provider_fn = snapshot_provider_fn
+        self.live_clip_provider_fn = live_clip_provider_fn
+        self.stream_urls_provider_fn = stream_urls_provider_fn
 
         self.base_url = f"https://api.telegram.org/bot{self.bot_token}"
         self.is_muted = False
@@ -99,21 +103,22 @@ class TelegramNotifier:
             daemon=True
         ).start()
 
-    def send_message(self, text: str) -> bool:
+    def send_message(self, text: str, reply_markup: Optional[dict] = None) -> bool:
         """Gửi tin nhắn dạng Markdown qua Telegram."""
         if not self.is_configured:
             return False
 
         try:
             with httpx.Client(timeout=10.0) as client:
-                resp = client.post(
-                    f"{self.base_url}/sendMessage",
-                    json={
-                        "chat_id": self.chat_id,
-                        "text": text,
-                        "parse_mode": "Markdown"
-                    }
-                )
+                payload = {
+                    "chat_id": self.chat_id,
+                    "text": text,
+                    "parse_mode": "Markdown"
+                }
+                if reply_markup:
+                    payload["reply_markup"] = reply_markup
+
+                resp = client.post(f"{self.base_url}/sendMessage", json=payload)
                 if resp.status_code == 200:
                     return True
                 logger.error(f"Lỗi gửi tin nhắn Telegram ({resp.status_code}): {resp.text}")
@@ -212,6 +217,7 @@ class TelegramNotifier:
             reply = (
                 "👋 *HỆ THỐNG CAMERA AN NINH LAPTOP*\n\n"
                 "Danh sách lệnh bạn có thể sử dụng:\n"
+                "🔴 `/live` - Xem trực tiếp thời gian thực (nhận link web + clip 5s tức thì)\n"
                 "📸 `/snapshot` - Chụp ảnh tức thì từ camera laptop gửi về\n"
                 "📊 `/status` - Xem trạng thái hệ thống, CPU, RAM, ổ đĩa\n"
                 "🔕 `/mute` - Tạm dừng gửi thông báo cảnh báo (khi bạn ở nhà)\n"
@@ -219,6 +225,33 @@ class TelegramNotifier:
                 "❓ `/help` - Xem hướng dẫn này"
             )
             self.send_message(reply)
+
+        elif cmd in ("/live", "/stream"):
+            urls = self.stream_urls_provider_fn() if self.stream_urls_provider_fn else {}
+            pub_url = urls.get("public_url", "")
+            loc_url = urls.get("local_url", "")
+
+            msg = "🔴 *XEM TRỰC TIẾP (REALTIME STREAM)*\n\n"
+            if pub_url and "trycloudflare" in pub_url:
+                msg += f"🌐 *Link xem từ xa (4G/Internet):*\n{pub_url}\n\n"
+            if loc_url:
+                msg += f"🏠 *Link xem trong nhà (Wi-Fi):*\n{loc_url}\n\n"
+            msg += "⏳ Đang quay ngay clip trực tiếp 5 giây gửi vào đây cho bạn..."
+
+            reply_markup = None
+            if pub_url or loc_url:
+                target_url = pub_url if (pub_url and "trycloudflare" in pub_url) else loc_url
+                reply_markup = {
+                    "inline_keyboard": [
+                        [{"text": "🔴 Mở Xem Trực Tiếp Trên Web", "url": target_url}]
+                    ]
+                }
+            self.send_message(msg, reply_markup=reply_markup)
+
+            if self.live_clip_provider_fn:
+                def send_clip(clip_path):
+                    self.send_video(clip_path, caption="🔴 *Clip quay trực tiếp thời gian thực (Live)*")
+                threading.Thread(target=self.live_clip_provider_fn, args=(send_clip,), daemon=True).start()
 
         elif cmd == "/snapshot":
             self.send_message("📸 Đang chụp ảnh từ camera laptop...")

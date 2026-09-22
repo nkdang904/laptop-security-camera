@@ -39,3 +39,8 @@ telegram:
   send_video: true             # Gửi clip video ngắn
   alert_title: "🚨 *CẢNH BÁO AN NINH: PHÁT HIỆN NGƯỜI!*"
   enable_commands: true        # Bật nhận lệnh điều khiển từ xa (/snapshot, /status, /help)
+
+web_stream:
+  enabled: true
+  port: 8080
+  enable_tunnel: true           # Tự động mở link Cloudflare HTTPS để xem trực tiếp từ xa (4G)

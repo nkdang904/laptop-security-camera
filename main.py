@@ -14,6 +14,7 @@ from core.detector import SmartDetector
 from core.recorder import VideoRecorder
 from core.retention import RetentionManager
 from core.telegram_notifier import TelegramNotifier
+from core.web_stream import LiveStreamManager
 
 def setup_logging():
     logging.basicConfig(
@@ -46,6 +47,7 @@ def main():
     rec_cfg = cfg.get("recording", {})
     ret_cfg = cfg.get("retention", {})
     tel_cfg = cfg.get("telegram", {})
+    web_cfg = cfg.get("web_stream", {})
 
     # 2. Khởi tạo Camera Stream
     camera = CameraStream(
@@ -86,19 +88,40 @@ def main():
             check_interval_minutes=ret_cfg.get("check_interval_minutes", 30)
         )
 
-    # 6. Khởi tạo Telegram Notifier
+    # 6. Khởi tạo Web Live Stream Server
+    web_stream = None
+    if web_cfg.get("enabled", True):
+        web_stream = LiveStreamManager(
+            port=web_cfg.get("port", 8080),
+            frame_provider=camera.get_snapshot,
+            enable_tunnel=web_cfg.get("enable_tunnel", True)
+        )
+
+    # 7. Khởi tạo Telegram Notifier
     def take_manual_snapshot():
         snap = camera.get_snapshot()
         if snap is not None:
             return recorder.save_snapshot(snap, prefix="cmd_snap")
         return None
 
+    def record_live_clip(on_complete):
+        # Quay clip trực tiếp theo yêu cầu
+        buffered = camera.get_buffered_frames()
+        recent = buffered[-10:] if len(buffered) >= 10 else buffered
+        recorder.record_event_async(
+            pre_frames=recent,
+            frame_provider_fn=camera.get_latest_frame,
+            on_complete_callback=on_complete
+        )
+
     telegram = TelegramNotifier(
         bot_token=tel_cfg.get("bot_token", ""),
         chat_id=tel_cfg.get("chat_id", ""),
         alert_title=tel_cfg.get("alert_title", "🚨 *CẢNH BÁO AN NINH: PHÁT HIỆN NGƯỜI!*"),
         enable_commands=tel_cfg.get("enable_commands", True),
-        snapshot_provider_fn=take_manual_snapshot
+        snapshot_provider_fn=take_manual_snapshot,
+        live_clip_provider_fn=record_live_clip,
+        stream_urls_provider_fn=lambda: web_stream.get_stream_urls() if web_stream else {}
     )
 
     # Biến cờ dừng an toàn
@@ -116,6 +139,8 @@ def main():
     camera.start()
     if retention:
         retention.start()
+    if web_stream:
+        web_stream.start()
     telegram.start()
 
     logger.info("Hệ thống đã sẵn sàng và đang giám sát không gian...")
@@ -185,6 +210,8 @@ def main():
         camera.stop()
         if retention:
             retention.stop()
+        if web_stream:
+            web_stream.stop()
         telegram.stop()
         logger.info("Hệ thống camera đã dừng hoàn toàn.")
 
