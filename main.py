@@ -120,7 +120,6 @@ def main():
         chat_id=tel_cfg.get("chat_id", ""),
         alert_title=tel_cfg.get("alert_title", "🚨 *CẢNH BÁO AN NINH: PHÁT HIỆN NGƯỜI!*"),
         enable_commands=tel_cfg.get("enable_commands", True),
-        snapshot_provider_fn=take_manual_snapshot
         snapshot_provider_fn=take_manual_snapshot,
         live_clip_provider_fn=record_live_clip,
         stream_urls_provider_fn=lambda: web_stream.get_stream_urls() if web_stream else {}

@@ -103,7 +103,6 @@ class TelegramNotifier:
             daemon=True
         ).start()
 
-    def send_message(self, text: str) -> bool:
     def send_message(self, text: str, reply_markup: Optional[dict] = None) -> bool:
         """Gửi tin nhắn dạng Markdown qua Telegram."""
         if not self.is_configured:
@@ -111,14 +110,6 @@ class TelegramNotifier:
 
         try:
             with httpx.Client(timeout=10.0) as client:
-                resp = client.post(
-                    f"{self.base_url}/sendMessage",
-                    json={
-                        "chat_id": self.chat_id,
-                        "text": text,
-                        "parse_mode": "Markdown"
-                    }
-                )
                 payload = {
                     "chat_id": self.chat_id,
                     "text": text,
