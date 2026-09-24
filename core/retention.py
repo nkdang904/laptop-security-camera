@@ -2,7 +2,7 @@ import os
 import time
 import logging
 import threading
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +21,14 @@ class RetentionManager:
         storage_dir: str = "recordings",
         max_days: int = 7,
         max_storage_gb: float = 10.0,
-        check_interval_minutes: int = 30
+        check_interval_minutes: int = 30,
+        on_cleanup: Optional[Callable[[], None]] = None
     ):
         self.storage_dir = os.path.abspath(storage_dir)
         self.max_days = max_days
         self.max_storage_bytes = int(max_storage_gb * 1024 * 1024 * 1024)
         self.check_interval_seconds = check_interval_minutes * 60
+        self.on_cleanup = on_cleanup
 
         os.makedirs(self.storage_dir, exist_ok=True)
         self.is_running = False
@@ -68,12 +70,17 @@ class RetentionManager:
         if not os.path.exists(self.storage_dir):
             return files_info
 
-        for entry in os.scandir(self.storage_dir):
-            if entry.is_file():
-                ext = os.path.splitext(entry.name)[1].lower()
-                if ext in self.ALLOWED_EXTENSIONS:
-                    stat = entry.stat()
-                    files_info.append((entry.path, stat.st_mtime, stat.st_size))
+        # Quét cả thư mục con (recordings/continuous/YYYY-MM-DD/...)
+        for root, _, files in os.walk(self.storage_dir):
+            for name in files:
+                ext = os.path.splitext(name)[1].lower()
+                if ext in self.ALLOWED_EXTENSIONS and not name.endswith(".tmp.mp4"):
+                    path = os.path.join(root, name)
+                    try:
+                        stat = os.stat(path)
+                    except OSError:
+                        continue
+                    files_info.append((path, stat.st_mtime, stat.st_size))
 
         return files_info
 
@@ -128,11 +135,26 @@ class RetentionManager:
                 except Exception as e:
                     logger.warning(f"Không thể xoá file {path}: {e}")
 
+        self._remove_empty_dirs()
+        if deleted_count > 0 and self.on_cleanup:
+            try:
+                self.on_cleanup()
+            except Exception as e:
+                logger.warning(f"Lỗi đồng bộ chỉ mục sau khi dọn dẹp: {e}")
+
         freed_mb = freed_bytes / (1024 * 1024)
         if deleted_count > 0:
             logger.info(f"[Retention] Hoàn thành dọn dẹp: Đã xoá {deleted_count} file, giải phóng {freed_mb:.2f} MB.")
 
         return deleted_count, freed_mb
+
+    def _remove_empty_dirs(self):
+        for root, dirs, files in os.walk(self.storage_dir, topdown=False):
+            if root != self.storage_dir and not dirs and not files:
+                try:
+                    os.rmdir(root)
+                except OSError:
+                    pass
 
     def stop(self):
         """Dừng luồng dọn dẹp."""

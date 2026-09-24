@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Camera Laptop</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.14v13.72a1 1 0 001.5.86l11-6.86a1 1 0 000-1.72l-11-6.86A1 1 0 008 5.14z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><rect fill="currentColor" x="6" y="5" width="4" height="14" rx="1"/><rect fill="currentColor" x="14" y="5" width="4" height="14" rx="1"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 3v5h5"/><text x="12" y="15.5" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" font-family="system-ui">10</text></symbol>
+    <symbol id="i-fwd" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M21 3v5h-5"/><text x="12" y="15.5" font-size="7.5" font-weight="700" text-anchor="middle" fill="currentColor" font-family="system-ui">10</text></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path fill="currentColor" d="M6 5h2v14H6zM9.5 12L19 5.5v13z"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path fill="currentColor" d="M16 5h2v14h-2zM14.5 12L5 18.5v-13z"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M3 8a2 2 0 012-2h2l1.5-2h7L17 6h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="i-rec" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="2" cx="12" cy="12" r="9"/><circle fill="currentColor" cx="12" cy="12" r="4.5"/></symbol>
+    <symbol id="i-scissors" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88M14.47 14.48L20 20M8.12 8.12L12 12"/></g></symbol>
+    <symbol id="i-full" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-pip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/></g><rect fill="currentColor" x="12" y="11" width="7" height="6" rx="1"/></symbol>
+    <symbol id="i-ai" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3"/><circle cx="12" cy="10" r="2.5"/><path d="M8 17c.6-2 2.2-3 4-3s3.4 1 4 3"/></g></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-shield-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 4l16 16"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M5 12h14"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></g></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M4 19h16"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="7" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></g></symbol>
+    <symbol id="i-motion" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></g></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></g></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></g></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></symbol>
+  </defs>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="dot" id="connDot" title="Trạng thái camera"></span>
+    <span class="brand-name">CAM-LAPTOP</span>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-view="watch" class="active"><svg><use href="#i-eye"/></svg><span>Xem</span></button>
+    <button data-view="events"><svg><use href="#i-list"/></svg><span>Sự kiện</span></button>
+    <button data-view="settings"><svg><use href="#i-gear"/></svg><span>Cài đặt</span></button>
+  </nav>
+  <button class="arm-pill" id="armBtn" title="Bật/tắt gửi cảnh báo Telegram">
+    <svg><use href="#i-shield"/></svg><span>Đang bảo vệ</span>
+  </button>
+</header>
+
+<main>
+  <!-- ============ XEM: LIVE + TUA LẠI ============ -->
+  <section class="view active" id="view-watch">
+    <div class="watch-layout">
+      <div class="watch-main">
+        <div class="stage" id="stage">
+          <img id="liveImg" alt="Live camera">
+          <video id="pbVideo" playsinline muted preload="auto"></video>
+          <div class="osd osd-tl">
+            <span class="badge badge-live" id="modeBadge">● LIVE</span>
+            <span class="osd-time" id="osdTime">--:--:--</span>
+          </div>
+          <div class="osd osd-tr">
+            <span class="badge badge-rec hidden" id="recBadge">● REC 00:00</span>
+          </div>
+          <div class="pip hidden" id="pip" title="Bấm để quay về xem trực tiếp">
+            <img id="pipImg" alt="">
+            <span class="badge badge-live small">● LIVE</span>
+          </div>
+          <div class="stage-msg hidden" id="stageMsg"></div>
+        </div>
+
+        <div class="controls">
+          <div class="ctrl-group">
+            <button class="icon-btn" id="btnBack" title="Lùi 10 giây (←)"><svg><use href="#i-back"/></svg></button>
+            <button class="icon-btn big" id="btnPlay" title="Phát / Tạm dừng (Space)"><svg><use href="#i-pause"/></svg></button>
+            <button class="icon-btn" id="btnFwd" title="Tới 10 giây (→)"><svg><use href="#i-fwd"/></svg></button>
+            <select class="speed" id="speedSel" title="Tốc độ phát">
+              <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option>
+              <option value="4">4×</option><option value="8">8×</option><option value="16">16×</option>
+            </select>
+            <button class="icon-btn" id="btnPrevEv" title="Sự kiện trước"><svg><use href="#i-prev"/></svg></button>
+            <button class="icon-btn" id="btnNextEv" title="Sự kiện sau"><svg><use href="#i-next"/></svg></button>
+          </div>
+          <div class="ctrl-group">
+            <button class="icon-btn toggle" id="btnAI" title="Hiện khung nhận diện AI"><svg><use href="#i-ai"/></svg></button>
+            <button class="icon-btn" id="btnSnap" title="Chụp ảnh"><svg><use href="#i-camera"/></svg></button>
+            <button class="icon-btn" id="btnRec" title="Ghi clip thủ công"><svg><use href="#i-rec"/></svg></button>
+            <button class="icon-btn" id="btnExport" title="Xuất / tải đoạn video"><svg><use href="#i-scissors"/></svg></button>
+            <button class="icon-btn toggle" id="btnPip" title="Cửa sổ live nhỏ khi xem lại"><svg><use href="#i-pip"/></svg></button>
+            <button class="icon-btn" id="btnFull" title="Toàn màn hình (F)"><svg><use href="#i-full"/></svg></button>
+            <button class="live-btn" id="btnLive" title="Về xem trực tiếp (L)">LIVE</button>
+          </div>
+        </div>
+
+        <div class="timeline-card">
+          <div class="tl-head">
+            <div class="tl-date">
+              <button class="icon-btn sm" id="dayPrev" title="Ngày trước"><svg><use href="#i-left"/></svg></button>
+              <button class="date-btn" id="dateBtn"><svg><use href="#i-cal"/></svg><span id="dateLabel">Hôm nay</span></button>
+              <button class="icon-btn sm" id="dayNext" title="Ngày sau"><svg><use href="#i-right"/></svg></button>
+            </div>
+            <div class="tl-legend">
+              <span><i class="lg lg-rec"></i>Ghi hình</span>
+              <span><i class="lg lg-person"></i>Người</span>
+              <span><i class="lg lg-manual"></i>Thủ công</span>
+              <label class="lg-toggle"><input type="checkbox" id="showMotion" checked><i class="lg lg-motion"></i>Chuyển động</label>
+            </div>
+            <div class="tl-zoom">
+              <button class="icon-btn sm" id="zoomOut" title="Thu nhỏ (-)"><svg><use href="#i-minus"/></svg></button>
+              <span id="zoomLabel">1 giờ</span>
+              <button class="icon-btn sm" id="zoomIn" title="Phóng to (+)"><svg><use href="#i-plus"/></svg></button>
+            </div>
+          </div>
+          <div class="tl-wrap" id="tlWrap">
+            <canvas id="tlCanvas"></canvas>
+            <div class="tl-cursor"><span id="tlCursorLabel">--:--:--</span></div>
+          </div>
+          <div class="tl-hint">Kéo timeline để tua · Chạm để nhảy tới · Cuộn / chụm 2 ngón để phóng to</div>
+        </div>
+      </div>
+
+      <aside class="watch-side">
+        <div class="side-head">
+          <h3>Sự kiện trong ngày</h3>
+          <span class="count" id="dayEvCount">0</span>
+        </div>
+        <div class="day-events" id="dayEvents"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ SỰ KIỆN ============ -->
+  <section class="view" id="view-events">
+    <div class="ev-toolbar">
+      <div class="chips" id="rangeChips">
+        <button data-range="today" class="chip active">Hôm nay</button>
+        <button data-range="yesterday" class="chip">Hôm qua</button>
+        <button data-range="7d" class="chip">7 ngày</button>
+        <button data-range="all" class="chip">Tất cả</button>
+      </div>
+      <div class="chips" id="typeChips">
+        <button data-type="person" class="chip active"><svg><use href="#i-person"/></svg>Người</button>
+        <button data-type="manual" class="chip active"><svg><use href="#i-hand"/></svg>Thủ công</button>
+        <button data-type="motion" class="chip"><svg><use href="#i-motion"/></svg>Chuyển động</button>
+      </div>
+    </div>
+    <div class="ev-grid" id="evGrid"></div>
+    <div class="ev-more"><button class="btn" id="evMore">Tải thêm</button></div>
+  </section>
+
+  <!-- ============ CÀI ĐẶT ============ -->
+  <section class="view" id="view-settings">
+    <div class="settings-grid">
+      <div class="card">
+        <h3>Bảo vệ &amp; cảnh báo</h3>
+        <label class="row"><span><b>Chế độ bảo vệ</b><small>Gửi cảnh báo qua Telegram khi phát hiện người</small></span><input type="checkbox" class="switch" data-key="armed"></label>
+        <label class="row"><span><b>Gửi ảnh chụp</b><small>Ảnh có khung nhận diện ngay khi phát hiện</small></span><input type="checkbox" class="switch" data-key="send_snapshot"></label>
+        <label class="row"><span><b>Gửi clip sự kiện</b><small>Clip ngắn kèm vài giây trước sự kiện</small></span><input type="checkbox" class="switch" data-key="send_video"></label>
+        <p class="note" id="tgNote"></p>
+      </div>
+      <div class="card">
+        <h3>Nhận diện AI</h3>
+        <label class="row"><span><b>Bật nhận diện</b><small>Lọc chuyển động + YOLOv8 nhận diện người</small></span><input type="checkbox" class="switch" data-key="detection_enabled"></label>
+        <label class="row col"><span><b>Độ tin cậy tối thiểu</b> <em data-out="confidence_threshold"></em><small>Cao hơn = ít báo nhầm, thấp hơn = nhạy hơn</small></span><input type="range" min="0.1" max="0.95" step="0.05" data-key="confidence_threshold"></label>
+        <label class="row col"><span><b>Độ nhạy chuyển động</b> <em data-out="motion_threshold"></em><small>Ngưỡng khác biệt điểm ảnh — số nhỏ = nhạy hơn</small></span><input type="range" min="5" max="100" step="1" data-key="motion_threshold"></label>
+        <label class="row col"><span><b>Vùng chuyển động tối thiểu</b> <em data-out="min_motion_area"></em><small>Diện tích (px²) để tính là chuyển động</small></span><input type="range" min="100" max="10000" step="100" data-key="min_motion_area"></label>
+        <label class="row col"><span><b>Khoảng nghỉ giữa 2 cảnh báo</b> <em data-out="cooldown_seconds"></em><small>Giây</small></span><input type="range" min="0" max="600" step="5" data-key="cooldown_seconds"></label>
+        <label class="row"><span><b>Lưu sự kiện chuyển động</b><small>Hiện dải chuyển động trên timeline</small></span><input type="checkbox" class="switch" data-key="log_motion_events"></label>
+      </div>
+      <div class="card">
+        <h3>Ghi hình</h3>
+        <label class="row"><span><b>Ghi hình liên tục 24/7</b><small>Cho phép tua lại bất kỳ thời điểm nào</small></span><input type="checkbox" class="switch" data-key="continuous_enabled"></label>
+        <label class="row col"><span><b>Độ dài clip sự kiện</b> <em data-out="record_on_detect_seconds"></em><small>Giây (sau thời điểm phát hiện)</small></span><input type="range" min="3" max="120" step="1" data-key="record_on_detect_seconds"></label>
+      </div>
+      <div class="card">
+        <h3>Lưu trữ</h3>
+        <div class="storage">
+          <div class="bar"><i id="storageBar"></i></div>
+          <div class="storage-text"><span id="storageText">—</span><span id="diskText" class="muted"></span></div>
+        </div>
+        <label class="row col"><span><b>Giữ dữ liệu tối đa</b> <em data-out="retention_max_days"></em><small>Ngày — file cũ hơn sẽ tự xoá</small></span><input type="range" min="1" max="60" step="1" data-key="retention_max_days"></label>
+        <label class="row col"><span><b>Dung lượng tối đa</b> <em data-out="retention_max_gb"></em><small>GB — vượt quá sẽ xoá file cũ nhất</small></span><input type="range" min="1" max="200" step="1" data-key="retention_max_gb"></label>
+      </div>
+      <div class="card">
+        <h3>Hệ thống</h3>
+        <dl class="sysinfo" id="sysInfo"></dl>
+        <div class="links" id="links"></div>
+        <button class="btn danger" id="logoutBtn">Đăng xuất</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Lịch chọn ngày -->
+<div class="popover hidden" id="calPop">
+  <div class="cal-head">
+    <button class="icon-btn sm" id="calPrev"><svg><use href="#i-left"/></svg></button>
+    <b id="calTitle"></b>
+    <button class="icon-btn sm" id="calNext"><svg><use href="#i-right"/></svg></button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+</div>
+
+<!-- Hộp thoại xuất clip -->
+<div class="modal hidden" id="exportModal">
+  <div class="modal-card">
+    <div class="modal-head"><h3>Xuất đoạn video</h3><button class="icon-btn sm" data-close><svg><use href="#i-close"/></svg></button></div>
+    <p class="muted">Chọn khoảng thời gian (tối đa 60 phút) để ghép thành 1 file MP4 và tải về.</p>
+    <div class="form-row"><label>Ngày</label><input type="date" id="expDate"></div>
+    <div class="form-row"><label>Từ</label><input type="time" step="1" id="expFrom"></div>
+    <div class="form-row"><label>Đến</label><input type="time" step="1" id="expTo"></div>
+    <div class="quick" id="expQuick">
+      <button class="chip" data-dur="60">1 phút</button><button class="chip" data-dur="300">5 phút</button>
+      <button class="chip" data-dur="600">10 phút</button><button class="chip" data-dur="1800">30 phút</button>
+    </div>
+    <div class="modal-actions"><button class="btn" data-close>Huỷ</button><button class="btn primary" id="expGo"><svg><use href="#i-download"/></svg>Tải xuống</button></div>
+  </div>
+</div>
+
+<!-- Xem ảnh / clip sự kiện -->
+<div class="modal hidden" id="viewer">
+  <div class="modal-card wide">
+    <div class="modal-head"><h3 id="viewerTitle"></h3><button class="icon-btn sm" data-close><svg><use href="#i-close"/></svg></button></div>
+    <div class="viewer-body" id="viewerBody"></div>
+    <div class="modal-actions" id="viewerActions"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

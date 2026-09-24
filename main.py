@@ -15,6 +15,10 @@ from core.recorder import VideoRecorder
 from core.retention import RetentionManager
 from core.telegram_notifier import TelegramNotifier
 from core.web_stream import LiveStreamManager
+from core.storage import RecordingIndex
+from core.continuous_recorder import ContinuousRecorder
+from core.controller import SystemController
+from core.events import ActivityTracker
 
 def setup_logging():
     logging.basicConfig(
@@ -25,6 +29,9 @@ def setup_logging():
             logging.FileHandler("camera.log", encoding="utf-8")
         ]
     )
+    # httpx log mỗi request kèm URL chứa bot token -> chỉ log cảnh báo trở lên
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 def load_config(config_path="config.yaml"):
     if not os.path.exists(config_path):
@@ -36,11 +43,13 @@ def cleanup_previous_instances(logger=None):
     """Tự động tắt các tiến trình camera cũ bị kẹt để giải phóng webcam."""
     try:
         import psutil
-        current_pid = os.getpid()
-        for proc in psutil.process_iter(['pid', 'cmdline']):
+        me = psutil.Process()
+        # Không tắt chính mình và các tiến trình cha (shell/cmd đã gọi lệnh này)
+        protected = {me.pid} | {p.pid for p in me.parents()}
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
-                if proc.info['pid'] != current_pid and proc.info['cmdline']:
-                    if any('main.py' in str(arg) for arg in proc.info['cmdline']):
+                if proc.info['pid'] not in protected and proc.info['cmdline']                         and 'python' in (proc.info['name'] or '').lower():
+                    if any(os.path.basename(str(arg)) == 'main.py' for arg in proc.info['cmdline']):
                         if logger:
                             logger.info(f"Đang đóng tiến trình camera cũ (PID {proc.info['pid']}) để giải phóng webcam...")
                         proc.terminate()
@@ -62,14 +71,24 @@ def main():
     logger.info("   KHỞI ĐỘNG HỆ THỐNG CAMERA AN NINH THÔNG MINH LAPTOP")
     logger.info("=" * 60)
 
-    # 1. Nạp file cấu hình
-    cfg = load_config()
+    # 1. Nạp file cấu hình (mặc định config.yaml, có thể chỉ định: python main.py --config other.yaml)
+    import argparse
+    parser = argparse.ArgumentParser(description="Laptop Smart Security Camera")
+    parser.add_argument("--config", default="config.yaml", help="Đường dẫn file cấu hình")
+    args = parser.parse_args()
+    cfg = load_config(args.config)
     cam_cfg = cfg.get("camera", {})
     det_cfg = cfg.get("detection", {})
     rec_cfg = cfg.get("recording", {})
     ret_cfg = cfg.get("retention", {})
     tel_cfg = cfg.get("telegram", {})
     web_cfg = cfg.get("web_stream", {})
+    cont_cfg = cfg.get("continuous_recording", {})
+    save_dir = rec_cfg.get("save_dir", "recordings")
+
+    controller = SystemController()
+    index = RecordingIndex(save_dir)
+    index.import_legacy_files()
 
     # 2. Khởi tạo Camera Stream
     camera = CameraStream(
@@ -99,6 +118,19 @@ def main():
         min_motion_area=det_cfg.get("min_motion_area", 800),
         cooldown_seconds=det_cfg.get("cooldown_seconds", 30)
     )
+    detector.enabled = det_cfg.get("enabled", True)
+
+    # 4b. Ghi hình liên tục 24/7 (phục vụ tua lại trên timeline web)
+    continuous = ContinuousRecorder(
+        frame_provider_fn=camera.get_latest_frame,
+        index=index,
+        width=cam_cfg.get("width", 640),
+        height=cam_cfg.get("height", 480),
+        fps=cont_cfg.get("fps", 10),
+        segment_minutes=cont_cfg.get("segment_minutes", 5),
+        crf=cont_cfg.get("quality_crf", 28),
+        enabled=cont_cfg.get("enabled", True)
+    )
 
     # 5. Khởi tạo Retention Manager (Dọn dẹp lưu trữ)
     retention = None
@@ -107,16 +139,21 @@ def main():
             storage_dir=rec_cfg.get("save_dir", "recordings"),
             max_days=ret_cfg.get("max_days", 7),
             max_storage_gb=ret_cfg.get("max_storage_gb", 10.0),
-            check_interval_minutes=ret_cfg.get("check_interval_minutes", 30)
+            check_interval_minutes=ret_cfg.get("check_interval_minutes", 30),
+            on_cleanup=index.prune_missing
         )
 
-    # 6. Khởi tạo Telegram Notifier
-    # 6. Khởi tạo Web Live Stream Server
+    # 6. Khởi tạo Web App (live + xem lại + sự kiện + cài đặt)
     web_stream = None
     if web_cfg.get("enabled", True):
         web_stream = LiveStreamManager(
             port=web_cfg.get("port", 8080),
-            frame_provider=camera.get_snapshot,
+            camera=camera,
+            detector=detector,
+            controller=controller,
+            index=index,
+            access_key=controller.get_access_key(str(web_cfg.get("access_key", "") or "")),
+            password=str(web_cfg.get("password", "") or ""),
             enable_tunnel=web_cfg.get("enable_tunnel", True)
         )
 
@@ -147,6 +184,23 @@ def main():
         stream_urls_provider_fn=lambda: web_stream.get_stream_urls() if web_stream else {}
     )
 
+    # Gắn các module vào bộ điều khiển web & áp thiết lập đã lưu từ web
+    controller.camera = camera
+    controller.detector = detector
+    controller.recorder = recorder
+    controller.continuous = continuous
+    controller.retention = retention
+    controller.telegram = telegram
+    controller.index = index
+    controller.web = web_stream
+    controller.flags["send_snapshot"] = tel_cfg.get("send_snapshot", True)
+    controller.flags["send_video"] = tel_cfg.get("send_video", True)
+    controller.apply_saved_settings()
+
+    # Gộp các lần phát hiện liên tiếp thành sự kiện hiển thị trên timeline
+    person_tracker = ActivityTracker(index, "person", gap_seconds=8.0)
+    motion_tracker = ActivityTracker(index, "motion", gap_seconds=5.0, min_duration=1.0, insert_on_open=False)
+
     # Biến cờ dừng an toàn
     running = True
 
@@ -160,6 +214,7 @@ def main():
 
     # Khởi động các tiến trình con
     camera.start()
+    continuous.start()
     if retention:
         retention.start()
     if web_stream:
@@ -181,6 +236,7 @@ def main():
             msg += f"🌐 *Link xem trực tiếp từ xa (4G):*\n{pub_url}\n\n"
         if loc_url:
             msg += f"🏠 *Link xem trong nhà (Wi-Fi):*\n{loc_url}\n\n"
+        msg += "📼 Web app hỗ trợ xem trực tiếp, tua lại timeline 24/7, xem sự kiện & chỉnh cài đặt.\n"
         msg += "💡 Gửi `/live` hoặc `/snapshot` bất cứ lúc nào để kiểm tra camera."
 
         target_url = pub_url if (pub_url and "trycloudflare" in pub_url) else loc_url
@@ -188,7 +244,7 @@ def main():
         if target_url:
             reply_markup = {
                 "inline_keyboard": [
-                    [{"text": "🔴 Mở Xem Live Stream Ngay", "url": target_url}]
+                    [{"text": "📹 Mở Camera (Live + Xem lại)", "url": target_url}]
                 ]
             }
         telegram.send_message(msg, reply_markup=reply_markup)
@@ -216,6 +272,20 @@ def main():
             # Chạy phát hiện qua AI
             result = detector.detect(frame)
 
+            # Cập nhật dải sự kiện trên timeline
+            now = time.time()
+            motion_tracker.update(bool(result.get("has_motion")) and controller.flags["log_motion_events"], now)
+            if result.get("has_target") and result.get("detections"):
+                best = max(result["detections"], key=lambda d: d["confidence"])
+                prev_event = person_tracker.event_id
+                new_event = person_tracker.update(True, now, label=best["label"], confidence=best["confidence"])
+                # Sự kiện mới nhưng đang trong cooldown (không cảnh báo) -> vẫn lưu ảnh thu nhỏ cho timeline
+                if new_event and new_event != prev_event and not result.get("can_alert"):
+                    thumb = recorder.save_snapshot(result.get("annotated_frame", frame), prefix="det")
+                    index.update_event(new_event, snapshot=thumb)
+            else:
+                person_tracker.update(False, now)
+
             # Xử lý khi phát hiện mục tiêu và đủ điều kiện cảnh báo
             if result.get("can_alert"):
                 detections = result.get("detections", [])
@@ -225,19 +295,28 @@ def main():
                 # 1. Lưu snapshot lập tức
                 annotated = result.get("annotated_frame", frame)
                 snapshot_file = recorder.save_snapshot(annotated, prefix="alert")
+                event_id = person_tracker.event_id
+                if event_id:
+                    ev = index.get_event(event_id)
+                    if ev and not ev.get("snapshot"):
+                        index.update_event(event_id, snapshot=snapshot_file)
 
                 # 2. Gửi ảnh snapshot cảnh báo qua Telegram ngay lập tức
-                if tel_cfg.get("send_snapshot", True):
+                if controller.flags["send_snapshot"]:
                     telegram.send_alert_async(
                         snapshot_path=snapshot_file,
                         details=f"Phát hiện: *{det_info}*"
                     )
 
                 # 3. Kích hoạt quay video sự kiện (bao gồm 2-3s trước đó từ ring buffer)
-                if tel_cfg.get("send_video", True):
+                if controller.flags["send_video"]:
                     pre_frames = camera.get_buffered_frames()
 
-                    def on_video_ready(video_path):
+                    def on_video_ready(video_path, event_id=event_id, det_info=det_info):
+                        if event_id:
+                            ev = index.get_event(event_id)
+                            if ev and not ev.get("clip"):
+                                index.update_event(event_id, clip=video_path)
                         logger.info(f"Đang gửi clip video sự kiện qua Telegram: {video_path}")
                         reply_markup = None
                         if web_stream:
@@ -274,6 +353,9 @@ def main():
         pass
     finally:
         logger.info("Đang giải phóng tài nguyên...")
+        person_tracker.close()
+        motion_tracker.close()
+        continuous.stop()
         camera.stop()
         if retention:
             retention.stop()

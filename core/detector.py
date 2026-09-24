@@ -31,9 +31,14 @@ class SmartDetector:
         self.min_motion_area = min_motion_area
         self.cooldown_seconds = cooldown_seconds
 
+        self.enabled = True
         self.last_alert_time = 0.0
         self.prev_gray_frame = None
         self.model = None
+
+        # Kết quả gần nhất (dùng để vẽ khung AI lên live stream trên web)
+        self.last_detections: List[Dict] = []
+        self.last_detection_time = 0.0
 
         self._init_yolo()
 
@@ -89,6 +94,10 @@ class SmartDetector:
         }
         """
         now = time.time()
+        if not self.enabled:
+            self.prev_gray_frame = None
+            return {"has_motion": False, "has_target": False, "detections": [],
+                    "can_alert": False, "annotated_frame": frame}
         has_motion = self.check_motion(frame)
 
         result = {
@@ -133,6 +142,8 @@ class SmartDetector:
                 result["has_target"] = True
                 result["detections"] = matched_detections
                 result["annotated_frame"] = self._draw_detections(frame, matched_detections)
+                self.last_detections = matched_detections
+                self.last_detection_time = now
 
                 # Kiểm tra cooldown trước khi kích hoạt cảnh báo
                 if now - self.last_alert_time >= self.cooldown_seconds:
@@ -144,9 +155,15 @@ class SmartDetector:
 
         return result
 
-    def _draw_detections(self, frame: np.ndarray, detections: List[Dict]) -> np.ndarray:
+    def draw_recent(self, frame: np.ndarray, max_age: float = 1.0) -> np.ndarray:
+        """Vẽ các khung nhận diện gần nhất (nếu còn mới) lên frame live."""
+        if self.last_detections and time.time() - self.last_detection_time <= max_age:
+            return self._draw_detections(frame, self.last_detections, copy=False)
+        return frame
+
+    def _draw_detections(self, frame: np.ndarray, detections: List[Dict], copy: bool = True) -> np.ndarray:
         """Vẽ bounding box và nhãn lên ảnh."""
-        annotated = frame.copy()
+        annotated = frame.copy() if copy else frame
         for det in detections:
             x1, y1, x2, y2 = det["box"]
             label = f"{det['label']} {det['confidence']:.2f}"

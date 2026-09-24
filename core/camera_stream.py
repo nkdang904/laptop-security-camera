@@ -33,6 +33,9 @@ class CameraStream:
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
         self.is_connected = False
+        self.measured_fps = 0.0
+        self._fps_count = 0
+        self._fps_window_start = time.time()
 
     def start(self):
         """Khởi động luồng đọc camera."""
@@ -88,8 +91,14 @@ class CameraStream:
                     self.latest_timestamp = now
                     # Lưu bản copy nông/hoặc frame vào ring buffer
                     self.frame_buffer.append((now, frame))
+                self._fps_count += 1
+                if now - self._fps_window_start >= 2.0:
+                    self.measured_fps = self._fps_count / (now - self._fps_window_start)
+                    self._fps_count = 0
+                    self._fps_window_start = now
             else:
                 self.is_connected = False
+                self.measured_fps = 0.0
                 logger.warning("Đọc frame thất bại. Đang thử lại...")
                 time.sleep(0.5)
                 continue

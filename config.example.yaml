@@ -23,7 +23,13 @@ recording:
   save_dir: "recordings"       # Thư mục lưu trữ video sự kiện
   record_on_detect_seconds: 8  # Độ dài ghi hình sau khi phát hiện (giây)
   pre_buffer_seconds: 3        # Số giây lưu trữ trước khi phát hiện (ring buffer đón đầu)
-  codec: "mp4v"                # Codec ghi hình ("mp4v" tương thích cao trên Windows)
+  codec: "h264"                # Clip sự kiện ghi H.264 (qua PyAV) để xem được trên web & Telegram
+
+continuous_recording:
+  enabled: true                # Ghi hình liên tục 24/7 để tua lại trên web (timeline)
+  fps: 10                      # FPS ghi liên tục (thấp hơn camera để tiết kiệm ổ đĩa)
+  segment_minutes: 5           # Mỗi file dài bao nhiêu phút
+  quality_crf: 28              # Chất lượng H.264: 18 (đẹp, nặng) -> 32 (nhẹ); ~1-2 GB/ngày ở 640x480
 
 retention:
   enabled: true                # Bật tính năng tự động dọn dẹp ổ đĩa
@@ -43,4 +49,6 @@ telegram:
 web_stream:
   enabled: true
   port: 8080
-  enable_tunnel: true           # Tự động mở link Cloudflare HTTPS để xem trực tiếp từ xa (4G)
+  enable_tunnel: true          # Tự động mở link Cloudflare HTTPS để xem trực tiếp từ xa (4G)
+  password: ""                 # Mật khẩu đăng nhập web (tuỳ chọn). Luôn có thể đăng nhập bằng access_key
+  access_key: ""               # Để trống = tự sinh & lưu trong runtime_settings.json (link Telegram tự kèm khoá)

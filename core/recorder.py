@@ -7,6 +7,8 @@ from datetime import datetime
 from typing import List, Tuple, Optional, Callable
 import numpy as np
 
+from core.video_writer import H264Writer, stamp_frame
+
 logger = logging.getLogger(__name__)
 
 class VideoRecorder:
@@ -40,7 +42,7 @@ class VideoRecorder:
         filepath = os.path.join(self.save_dir, filename)
 
         # Thêm timestamp vào góc ảnh
-        stamped = self._stamp_frame(frame.copy())
+        stamped = stamp_frame(frame.copy())
         cv2.imwrite(filepath, stamped)
         logger.info(f"Đã lưu snapshot: {filepath}")
         return filepath
@@ -81,38 +83,40 @@ class VideoRecorder:
         filename = f"event_{timestamp}.mp4"
         filepath = os.path.join(self.save_dir, filename)
 
-        fourcc = cv2.VideoWriter_fourcc(*self.codec)
-        writer = cv2.VideoWriter(filepath, fourcc, self.fps, self.frame_size)
-
-        if not writer.isOpened():
-            logger.error(f"Không thể khởi tạo VideoWriter cho file: {filepath}")
+        try:
+            # H.264 (nếu có PyAV) phát được cả trên trình duyệt lẫn Telegram
+            writer = H264Writer(filepath, self.frame_size[0], self.frame_size[1], fps=self.fps, crf=26)
+        except Exception as e:
+            logger.error(f"Không thể khởi tạo VideoWriter cho file: {filepath} ({e})")
             self.is_recording = False
             return
 
         logger.info(f"Bắt đầu ghi video sự kiện: {filepath}")
 
-        # 1. Ghi các frame trong ring buffer trước sự kiện
-        for _, frame in pre_frames:
-            resized = cv2.resize(frame, self.frame_size)
-            writer.write(self._stamp_frame(resized))
+        try:
+            # 1. Ghi các frame trong ring buffer trước sự kiện (giữ đúng timestamp gốc)
+            last_ts = 0.0
+            for ts, frame in pre_frames:
+                writer.write(stamp_frame(frame.copy(), ts), ts)
+                last_ts = ts
 
-        # 2. Ghi các frame tiếp theo trong thời gian record_seconds
-        start_time = time.time()
-        delay = 1.0 / self.fps
+            # 2. Ghi các frame tiếp theo trong thời gian record_seconds
+            start_time = time.time()
+            delay = 1.0 / self.fps
 
-        while time.time() - start_time < self.record_seconds:
-            loop_start = time.time()
-            ok, frame, _ = frame_provider_fn()
-            if ok and frame is not None:
-                resized = cv2.resize(frame, self.frame_size)
-                writer.write(self._stamp_frame(resized))
+            while time.time() - start_time < self.record_seconds:
+                loop_start = time.time()
+                ok, frame, ts = frame_provider_fn()
+                if ok and frame is not None and ts > last_ts:
+                    last_ts = ts
+                    writer.write(stamp_frame(frame, ts), ts)
 
-            sleep_time = delay - (time.time() - loop_start)
-            if sleep_time > 0:
-                time.sleep(sleep_time)
-
-        writer.release()
-        self.is_recording = False
+                sleep_time = delay - (time.time() - loop_start)
+                if sleep_time > 0:
+                    time.sleep(sleep_time)
+        finally:
+            writer.close()
+            self.is_recording = False
         logger.info(f"Đã hoàn thành ghi video sự kiện: {filepath} ({os.path.getsize(filepath) / 1024:.1f} KB)")
 
         if on_complete_callback:
@@ -120,19 +124,3 @@ class VideoRecorder:
                 on_complete_callback(filepath)
             except Exception as e:
                 logger.error(f"Lỗi trong callback sau khi ghi video: {e}")
-
-    def _stamp_frame(self, frame: np.ndarray) -> np.ndarray:
-        """In thời gian thực (Watermark/OSD) lên góc trên của khung hình."""
-        time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cv2.putText(
-            frame,
-            f"CAM-LAPTOP | {time_str}",
-            (15, 25),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
-            (0, 255, 255),
-            2,
-            cv2.LINE_AA
-        )
-        return frame
-
